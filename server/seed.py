@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 from random import randint, choice as rc
-
 from faker import Faker
+from werkzeug.security import generate_password_hash
 
 from app import app
 from models import db, Recipe, User
@@ -14,8 +14,6 @@ with app.app_context():
     print("Deleting all records...")
     Recipe.query.delete()
     User.query.delete()
-
-    fake = Faker()
 
     print("Creating users...")
 
@@ -30,13 +28,15 @@ with app.app_context():
             username = fake.first_name()
         usernames.append(username)
 
+        # Hash the password before saving
+        password_hash = generate_password_hash(username + 'password')
+
         user = User(
             username=username,
             bio=fake.paragraph(nb_sentences=3),
             image_url=fake.url(),
+            password_hash=password_hash,  # Use hashed password
         )
-
-        user.password_hash = user.username + 'password'
 
         users.append(user)
 
@@ -53,6 +53,7 @@ with app.app_context():
             minutes_to_complete=randint(15,90),
         )
 
+        # Randomly assign a user to the recipe
         recipe.user = rc(users)
 
         recipes.append(recipe)
